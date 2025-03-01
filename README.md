@@ -20,7 +20,7 @@ Can you master the delicate balance of growth and survival? 🏆 Dive in and fin
 Let the feasting begin! 🎉
 
 **Enjoy the game and may the biggest ball win! 🏆🥇**
-
+<!--
 ---
 
 ## Purpose:
@@ -34,7 +34,7 @@ To run and interact with the game, follow the steps below.
 ### Prerequisites:
 - **Web Browser**: This game runs directly in your web browser, so no installation is required.
 - **Internet Connection**: Required to access the game and its assets (if applicable).
-
+  
 ### Installation:
 
 1. **Clone the Repository**:
@@ -58,7 +58,7 @@ To run and interact with the game, follow the steps below.
 - **Spacebar**: Split your ball (optional feature, if implemented).
   
 (You can add more specific instructions as needed based on your game's mechanics)
-
+-->
 ---
 
 ## License:
