@@ -51,7 +51,7 @@ To run and interact with the game, follow the steps below.
    ```
 
 3. **Start Playing**:
-   Once the game loads in your browser, use the controls to navigate the ball and start feasting!
+   Once the game loads in your browser, use the controls to navigate the ball and start feasting!     ciao
 
 ### Commands:
 - **Arrow Keys** or **WASD**: Move the ball around.
