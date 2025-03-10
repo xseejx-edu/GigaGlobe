@@ -1,9 +1,6 @@
 package gigaglobe;
 
 import javax.swing.*;
-
-import javafx.event.ActionEvent;
-
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -16,12 +13,12 @@ public class DrawingCanvas extends JComponent {
     private int w;
     private int h;
     public Point mouse = new Point(0,0);
+    Humanoid ball;
+    Baseplate baseplate = new Baseplate(100, 100);
 
     public DrawingCanvas(int w, int h) {
         this.w = w;
         this.h = h;
-        mouseEvent();
-        update();
     }
     public void mouseEvent(){
         this.addMouseMotionListener(new MouseAdapter() {
@@ -30,7 +27,7 @@ public class DrawingCanvas extends JComponent {
                 mouse.x = e.getX();
                 mouse.y = e.getY();
 
-                System.out.println("Mouse X: " + mouse.x + ", Mouse Y: " + mouse.y);
+                //System.out.println("Ball X: " + ball.global_x + ", Ball Y: " + ball.global_y);
             }
         });
     }
@@ -39,7 +36,20 @@ public class DrawingCanvas extends JComponent {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
                 //repaint();
-                
+                System.out.println("Ball X: " + ball.global_x + ", Ball Y: " + ball.global_y);
+                if(mouse.x>w/2){
+                    ball.global_x+=(ball.global_x<baseplate.w) ? ball.speed:0;
+                }else if(mouse.x<w/2){
+                    ball.global_x-=(ball.global_x>0) ? ball.speed:0;
+                }
+
+                if(mouse.y<h/2){
+                    ball.global_y-=(ball.global_y>0) ? ball.speed:0;
+                }else if(mouse.y>h/2){
+                    ball.global_y+=(ball.global_y<baseplate.h) ? ball.speed:0;
+                }
+
+
             }
         });
         timer.start(); // Start the timer
@@ -54,10 +64,13 @@ public class DrawingCanvas extends JComponent {
         g2d.setColor(new Color(100, 149, 237));
         g2d.fill(r);
 
-        // Ball
-        Humanoid ball = new Humanoid(w / 2 - 25, h / 2 - 25, 50, 50);
-        Ellipse2D.Double e = new Ellipse2D.Double(ball.w, ball.h, ball.x, ball.y);
+        // Init Ball
+        ball = new Humanoid((w/2)-25, (h/2)-25, 50, 50);        
+        Ellipse2D.Double e = new Ellipse2D.Double(ball.x, ball.y, ball.w, ball.h);
         g2d.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256))); // R G B
         g2d.fill(e);
+
+        mouseEvent();
+        update();
     }
 }
