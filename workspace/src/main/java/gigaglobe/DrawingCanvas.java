@@ -14,7 +14,8 @@ public class DrawingCanvas extends JComponent {
     private int h;
     public Point mouse = new Point(0,0);
     Humanoid ball;
-    Baseplate baseplate = new Baseplate(100, 100);
+    Enemy enemy;
+    Baseplate baseplate = new Baseplate(1000, 1000);
 
     public DrawingCanvas(int w, int h) {
         this.w = w;
@@ -32,7 +33,7 @@ public class DrawingCanvas extends JComponent {
         });
     }
     public void update(){
-        Timer timer = new Timer(16, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60)
+        Timer timer = new Timer(50, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60) --> 1000/FPS
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
                 //repaint();
@@ -48,8 +49,6 @@ public class DrawingCanvas extends JComponent {
                 }else if(mouse.y>h/2){
                     ball.global_y+=(ball.global_y<baseplate.h) ? ball.speed:0;
                 }
-
-
             }
         });
         timer.start(); // Start the timer
@@ -60,15 +59,19 @@ public class DrawingCanvas extends JComponent {
         Random random = new Random();
         Graphics2D g2d = (Graphics2D) g;
         // Background
-        Rectangle2D.Double r = new Rectangle2D.Double(0, 0, w, h);
+        Rectangle2D.Double r = new Rectangle2D.Double(0, 0, 1000, 1000);
         g2d.setColor(new Color(100, 149, 237));
         g2d.fill(r);
 
         // Init Ball
-        ball = new Humanoid((w/2)-25, (h/2)-25, 50, 50);        
-        Ellipse2D.Double e = new Ellipse2D.Double(ball.x, ball.y, ball.w, ball.h);
+        ball = new Humanoid((w/2)-25, (h/2)-25, 50, 50); 
+        enemy = new Enemy(700, 500, 50, 50); 
+        Ellipse2D.Double user = new Ellipse2D.Double(ball.x, ball.y, ball.w, ball.h);
+
+        Ellipse2D.Double bot = new Ellipse2D.Double(enemy.global_x, enemy.global_y, enemy.w, enemy.h);
         g2d.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256))); // R G B
-        g2d.fill(e);
+        g2d.fill(user);
+        g2d.fill(bot);
 
         mouseEvent();
         update();
