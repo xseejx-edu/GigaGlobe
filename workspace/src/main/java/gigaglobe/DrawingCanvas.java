@@ -69,21 +69,11 @@ public class DrawingCanvas extends JComponent {
         enemy = new Enemy(700, 500, 50, 50); 
         Ellipse2D.Double user = new Ellipse2D.Double(ball.x, ball.y, ball.w, ball.h);// users are declared with local x and y
 
-        Ellipse2D.Double bot = new Ellipse2D.Double(enemy.global_x, enemy.global_y, enemy.w, enemy.h);// Bots are declared with global x and y
-        
-        /*
-         Rectangle2D.Double test = new Rectangle2D.Double(-ball.x, -ball.y, w, h);
-        g2d.setColor(new Color(255, 0, 0));
-        g2d.fill(test);
-         */
-        
+        Ellipse2D.Double bot = new Ellipse2D.Double(enemy.global_x, enemy.global_y, enemy.w, enemy.h);// Bots are declared with global x and y        
 
         g2d.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256))); // R G B
         g2d.fill(user);
         g2d.fill(bot);
-
-
-
 
         baseplate.createUser(user);
         baseplate.createEntity(bot);

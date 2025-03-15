@@ -17,7 +17,7 @@ public class Baseplate {
         this.w = w;
         this.h = h;
     }
-
+                            // ball global x and ball global y
     public void moveLocally(int x, int y){
         // we get the local map which is the window size
         int w = DrawingCanvas.w;// this is the screen width
@@ -26,6 +26,7 @@ public class Baseplate {
         double globaly_camera = -(h/2)-25;
                                                 //          x y
         Rectangle2D.Double camera = new Rectangle2D.Double(globalx_camera, globaly_camera, w, h);
+        //camera.x;
 
     }
 
