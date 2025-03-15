@@ -1,18 +1,13 @@
 # Compiled class files
 *.class
-
 # Maven target directory (build output)
 workspace/target/
-
 # Log files
 *.log
-
 # BlueJ IDE files
 *.ctxt
-
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
-
 # Package Files
 *.jar
 *.war
@@ -21,11 +16,9 @@ workspace/target/
 *.zip
 *.tar.gz
 *.rar
-
 # JVM crash logs
 hs_err_pid*
 replay_pid*
-
 # IDE configurations (if you use IntelliJ or Eclipse)
 *.iml
 .idea/
