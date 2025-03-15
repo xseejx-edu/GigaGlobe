@@ -10,16 +10,16 @@ import java.awt.geom.Rectangle2D;
 import java.util.Random;
 
 public class DrawingCanvas extends JComponent {
-    private int w;
-    private int h;
+    public static int w;
+    public static int h;
     public Point mouse = new Point(0,0);
     Humanoid ball;
     Enemy enemy;
     Baseplate baseplate = new Baseplate(1000, 1000);
 
-    public DrawingCanvas(int w, int h) {
-        this.w = w;
-        this.h = h;
+    public DrawingCanvas(int wi, int he) {
+        w = wi;
+        h = he;
     }
     public void mouseEvent(){
         this.addMouseMotionListener(new MouseAdapter() {
@@ -49,6 +49,7 @@ public class DrawingCanvas extends JComponent {
                 }else if(mouse.y>h/2){
                     ball.global_y+=(ball.global_y<baseplate.h) ? ball.speed:0;
                 }
+                baseplate.moveLocally(ball.global_x, ball.global_y);
             }
         });
         timer.start(); // Start the timer
@@ -64,14 +65,28 @@ public class DrawingCanvas extends JComponent {
         g2d.fill(r);
 
         // Init Ball
-        ball = new Humanoid((w/2)-25, (h/2)-25, 50, 50); 
+        ball = new Humanoid((w/2)-25, (h/2)-25, 50, 50); // x and y are local -- globals are set to 0 0 default
         enemy = new Enemy(700, 500, 50, 50); 
-        Ellipse2D.Double user = new Ellipse2D.Double(ball.x, ball.y, ball.w, ball.h);
+        Ellipse2D.Double user = new Ellipse2D.Double(ball.x, ball.y, ball.w, ball.h);// users are declared with local x and y
 
-        Ellipse2D.Double bot = new Ellipse2D.Double(enemy.global_x, enemy.global_y, enemy.w, enemy.h);
+        Ellipse2D.Double bot = new Ellipse2D.Double(enemy.global_x, enemy.global_y, enemy.w, enemy.h);// Bots are declared with global x and y
+        
+        /*
+         Rectangle2D.Double test = new Rectangle2D.Double(-ball.x, -ball.y, w, h);
+        g2d.setColor(new Color(255, 0, 0));
+        g2d.fill(test);
+         */
+        
+
         g2d.setColor(new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256))); // R G B
         g2d.fill(user);
         g2d.fill(bot);
+
+
+
+
+        baseplate.createUser(user);
+        baseplate.createEntity(bot);
 
         mouseEvent();
         update();
