@@ -1,23 +1,28 @@
 package gigaglobe;
 
+import java.awt.Color;
+import java.awt.geom.Rectangle2D;
+
 public class Humanoid {
-    public int x;
-    public int y;
-    public int w;
-    public int h;
+    public int x;// Deprecated
+    public int y;// Deprecated
+
+    public double width;
+    public double height;
+    public Rectangle2D.Double camera = new Rectangle2D.Double();
+    public Color color;
 
     
-    public int global_x;
-    public int global_y;
-    public int speed;
+    public double global_x;
+    public double global_y;
+    public double speed;
     
-    public Humanoid(int x, int y, int w, int h) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
+    public Humanoid(double gx, double gy, double w, double h, Color c) {
         speed = 1;
-        global_y = 0;
-        global_x = 0;
+        global_y = gy;
+        global_x = gx;
+        this.width = w;
+        this.height = h;
+        color = new Color(c.getRGB());
     }
 }

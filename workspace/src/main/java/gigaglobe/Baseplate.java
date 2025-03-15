@@ -1,33 +1,34 @@
 package gigaglobe;
 
-import java.awt.Point;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Ellipse2D.Double;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.awt.geom.Rectangle2D;
+
 
 
 public class Baseplate {
     public int w;
     public int h;
-    ArrayList<Point2D> entities = new ArrayList<>();  // x & y of map's object
+    public ArrayList<Point2D> entities = new ArrayList<>();  // x & y of map's object
     protected Point2D.Double userPos;
     public Baseplate(int w, int h) {
         this.w = w;
         this.h = h;
     }
-                            // ball global x and ball global y
-    public void moveLocally(int x, int y){
-        // we get the local map which is the window size
+                            
+    // Moves the camera in the map
+    public void moveLocally(Humanoid ball){
+        // Get the local map which is the window size
         int w = DrawingCanvas.w;// this is the screen width
         int h = DrawingCanvas.h;// this is the screen height
-        double globalx_camera = -((w/2)-25);
-        double globaly_camera = -(h/2)-25;
-                                                //          x y
-        Rectangle2D.Double camera = new Rectangle2D.Double(globalx_camera, globaly_camera, w, h);
-        //camera.x;
-
+        double globalx_camera = ball.global_x-((w/2)-(ball.width/2));
+        double globaly_camera = ball.global_y-(h/2)-(ball.width/2);
+        
+        ball.camera.x = globalx_camera;
+        ball.camera.y = globaly_camera;
+        ball.camera.width  =w;
+        ball.camera.height  =h;
     }
 
     public void createEntity(Ellipse2D.Double entity){
