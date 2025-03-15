@@ -1,6 +1,6 @@
 # Compiled class files
 *.class
-# Maven target directory (build output)
+# Maven target directory (build output) 
 workspace/target/
 # Log files
 *.log
