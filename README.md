@@ -72,6 +72,6 @@ This game is provided **"as is"** for educational purposes. No warranties or gua
 ---
 
 ## Contributing:
-If you would like to contribute to the development of this project, please fork the repository and submit pull requests. Ensure your changes follow the general coding standards and provide clear explanations for any modifications.
+If you would like to contribute to the development of this project, please fork the repository and submit pull requests. Ensure your changes follow the general coding standards and provide clear explanations for any modifications. 
 
 ---
