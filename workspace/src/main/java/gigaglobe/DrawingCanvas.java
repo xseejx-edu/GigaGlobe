@@ -55,7 +55,7 @@ public class DrawingCanvas extends JComponent {
 
     // Update function which works as game-clock
     public void update(){
-        Timer timer = new Timer(32, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60) --> 1000/FPS
+        Timer timer = new Timer(16, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60) --> 1000/FPS
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
                 if(mouse.x>w/2){
@@ -89,10 +89,11 @@ public class DrawingCanvas extends JComponent {
 
 
         // Background
-        Rectangle2D.Double r = new Rectangle2D.Double(0, 0, 1000, 1000);
+        Rectangle2D.Double r = new Rectangle2D.Double(0, 0, baseplate.w, baseplate.h);
         g2d.setColor(new Color(100, 149, 237));
         g2d.fill(r);
-        drawLines(g2d, 500);
+
+        drawLines(g2d, 50);
          
         // Instance of ball but updated
         user.x = ball.global_x;
@@ -123,11 +124,11 @@ public class DrawingCanvas extends JComponent {
     // Method to draw lines every x pixels
     private void drawLines(Graphics2D g2d, int spacing) {
         g2d.setColor(Color.GRAY);
-        for (int x = 0; x < w; x += spacing) {
-            g2d.drawLine(x, 0, x, h);
+        for (int x = 0; x < baseplate.w; x += spacing) {
+            g2d.drawLine(x, 0, x, baseplate.h);
         }
-        for (int y = 0; y < h; y += spacing) {
-            g2d.drawLine(0, y, w, y);
+        for (int y = 0; y < baseplate.h; y += spacing) {
+            g2d.drawLine(0, y, baseplate.w, y);
         }
     }
 
