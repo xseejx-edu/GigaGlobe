@@ -58,17 +58,18 @@ public class DrawingCanvas extends JComponent {
         Timer timer = new Timer(16, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60) --> 1000/FPS
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
-                if(mouse.x>w/2){
-                    ball.global_x+=(ball.global_x<baseplate.w-ball.width) ? ball.speed:0;
-                }else if(mouse.x<w/2){
-                    ball.global_x-=(ball.global_x>ball.width-ball.width) ? ball.speed:0;
+                // Calcola inclinazione
+                double deltaX = mouse.x - ball.global_x;
+                double deltaY = mouse.y - ball.global_y;
+                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                if (distance > 0) {
+                    deltaX /= distance;
+                    deltaY /= distance;
                 }
-
-                if(mouse.y<h/2){
-                    ball.global_y-=(ball.global_y>0) ? ball.speed:0;
-                }else if(mouse.y>h/2){
-                    ball.global_y+=(ball.global_y<baseplate.h-ball.width) ? ball.speed:0;
-                }
+                
+                ball.global_x += deltaX * ball.speed;
+                ball.global_y += deltaY * ball.speed;
 
                 // Move the camera based on the ball position
                 baseplate.moveLocally(ball);
@@ -130,6 +131,12 @@ public class DrawingCanvas extends JComponent {
         for (int y = 0; y < baseplate.h; y += spacing) {
             g2d.drawLine(0, y, baseplate.w, y);
         }
+        g2d.setColor(Color.BLACK);
+        g2d.setStroke(new BasicStroke(5)); // Set thickness to 5 pixels
+        g2d.drawLine(0, 0, 0, baseplate.h); // Left border
+        g2d.drawLine(baseplate.w, 0, baseplate.w, baseplate.h); // Right border
+        g2d.drawLine(0, 0, baseplate.w, 0); // Top border
+        g2d.drawLine(0, baseplate.h, baseplate.w, baseplate.h); // Bottom border
     }
 
 }
