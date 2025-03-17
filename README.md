@@ -9,8 +9,6 @@ However, survival isn't just about feasting. If you don't manage to consume anyt
 
 Can you master the delicate balance of growth and survival? 🏆 Dive in and find out in **GigaGlobe**!
 
-**Note:** This game is **NOT** affiliated with *Agar.io* in any way. It is a completely original game developed for **educational purposes only**.
-
 ## Features:
 - **Intuitive Controls 🎮**: Easily navigate your ball through the arena.
 - **Dynamic Growth 📈**: Watch your ball grow larger as you eat.
