@@ -18,7 +18,7 @@ public class Humanoid {
     public double speed;
     
     public Humanoid(double gx, double gy, double w, double h, Color c) {
-        speed = 1;
+        speed = 3;
         global_y = gy;
         global_x = gx;
         this.width = w;
