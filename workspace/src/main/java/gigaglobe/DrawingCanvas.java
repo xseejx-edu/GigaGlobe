@@ -11,6 +11,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.Random;
 
 public class DrawingCanvas extends JComponent {
+    private int score = 0;
     public static int w; // Windows width
     public static int h; // Windows height
     public Point mouse = new Point(0, 0);
@@ -72,7 +73,7 @@ public class DrawingCanvas extends JComponent {
 
     // Update function which works as game-clock
     public void update() {
-        Timer timer = new Timer(4, new ActionListener() {
+        Timer timer = new Timer(8, new ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
                 // Update mouseBall position, adjusting for camera offset
@@ -116,6 +117,7 @@ public class DrawingCanvas extends JComponent {
 
                     if (checkIfEating(ball, enemy)) {
                         enemy.riposiziona();
+                        score++;
                     }
 
                 }
@@ -130,24 +132,17 @@ public class DrawingCanvas extends JComponent {
 
     public boolean checkIfEating(Humanoid ball, Enemy target) {
         // Calcola il centro della palla
-        double ballCenterX = ball.global_x + (ball.width / 2.0);
-        double ballCenterY = ball.global_y + (ball.height / 2.0);
+        double bX = ball.global_x + (ball.width / 2.0);
+        double bY = ball.global_y + (ball.height / 2.0);
 
         // Calcola il centro della palla target
-        double targetCenterX = target.global_x + (target.w / 2.0);
-        double targetCenterY = target.global_y + (target.h / 2.0);
+        double tX = target.global_x + (target.w / 2.0);
+        double tY = target.global_y + (target.h / 2.0);
 
-        // Calcola la distanza tra i centri delle due palle
-        double dx = targetCenterX - ballCenterX;
-        double dy = targetCenterY - ballCenterY;
-        double distance = Math.sqrt(dx * dx + dy * dy);
-
-        // Soglia per considerare la palla "mangiata" (ad esempio, il raggio della
-        // palla)
-        double eatingThreshold = ball.width / 2.0;
-
-        // Se la distanza è inferiore alla soglia, la palla sta per mangiare l'altra
-        return distance < eatingThreshold;
+        if (Math.abs(tX - bX) >= ball.width / 2.0 && Math.abs(tY - bY) >= ball.height / 2.0) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -189,6 +184,11 @@ public class DrawingCanvas extends JComponent {
         // Draw the mouse-following ball
         // g2d.setColor(Color.RED); // Set the color for the mouse-following ball
         // g2d.fill(mouseBall);
+
+        g2d.setTransform(oldTransform); // Ripristina la trasformazione per disegnare il punteggio
+        g2d.setColor(Color.BLACK);
+        g2d.setFont(new Font("Arial", Font.BOLD, 24));
+        g2d.drawString("Score: " + score, 20, 30); // Disegna il punteggio in alto a sinistra
 
         g2d.setTransform(oldTransform);
 
