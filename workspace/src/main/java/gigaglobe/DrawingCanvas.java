@@ -11,9 +11,9 @@ import java.awt.geom.Rectangle2D;
 import java.util.Random;
 
 public class DrawingCanvas extends JComponent {
-    public static int w;    // Windows width 
-    public static int h;    // Windows height 
-    public Point mouse = new Point(0,0);
+    public static int w; // Windows width
+    public static int h; // Windows height
+    public Point mouse = new Point(0, 0);
     Humanoid ball;
     Enemy enemy;
     Baseplate baseplate = new Baseplate(1000, 1000);
@@ -26,13 +26,16 @@ public class DrawingCanvas extends JComponent {
         h = he;
 
         // User
-        ball = new Humanoid((w/2)-25, (h/2)-25, 50, 50, new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
-        user = new Ellipse2D.Double(ball.x, ball.y, ball.width, ball.height);// Instance of ball but with the purpose to be drawed
+        ball = new Humanoid((w / 2) - 25, (h / 2) - 25, 50, 50,
+                new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
+        user = new Ellipse2D.Double(ball.x, ball.y, ball.width, ball.height);// Instance of ball but with the purpose to
+                                                                             // be drawed
 
         // Enemies
         enemy = new Enemy(700, 500, 50, 50, new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
-        bot = new Ellipse2D.Double(enemy.global_x, enemy.global_y, enemy.w, enemy.h);// Instance of enemy but with the purpose to be drawed 
-        
+        bot = new Ellipse2D.Double(enemy.global_x, enemy.global_y, enemy.w, enemy.h);// Instance of enemy but with the
+                                                                                     // purpose to be drawed
+
         // Append entities to the logical baseplate
         baseplate.createUser(user);
         baseplate.createEntity(bot);
@@ -42,8 +45,8 @@ public class DrawingCanvas extends JComponent {
         update();
     }
 
-    // Get mouse X and Y 
-    public void mouseEvent(){
+    // Get mouse X and Y
+    public void mouseEvent() {
         this.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
@@ -54,40 +57,52 @@ public class DrawingCanvas extends JComponent {
     }
 
     // Update function which works as game-clock
-    public void update(){
-        Timer timer = new Timer(8, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60) --> 1000/FPS
+    public void update() {
+        Timer timer = new Timer(4, new ActionListener() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
-                // Calcola inclinazione
-                double deltaX = mouse.x - ball.global_x;
-                double deltaY = mouse.y - ball.global_y;
-                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                
-                if (distance > 0) {
-                    deltaX /= distance;
-                    deltaY /= distance;
+                // Calcola la differenza tra la posizione del mouse e il centro della finestra
+                double dx = mouse.x - (w / 2);
+                double dy = mouse.y - (h / 2 + 50);
+    
+                // Calcola la distanza tra il mouse e il centro
+                float distance = (float) Math.sqrt(dx * dx + dy * dy);
+    
+                // Se il mouse è abbastanza vicino al centro, ferma la palla
+                if (distance < 5) { // Soglia di prossimità
+                    dx = 0;
+                    dy = 0;
+                } else {
+                    // Normalizza la direzione (per avere un movimento uniforme)
+                    dx /= distance;
+                    dy /= distance;
                 }
-
-                ball.global_x += deltaX * ball.speed;
-                ball.global_y += deltaY * ball.speed;
-
+    
+                // Muovi la palla in base alla direzione calcolata
+                ball.global_x += dx * ball.speed;
+                ball.global_y += dy * ball.speed;
+    
+                // Assicurati che la palla rimanga all'interno dei limiti del baseplate
+                ball.global_x = Math.max(0, Math.min(baseplate.w - ball.width, ball.global_x));
+                ball.global_y = Math.max(0, Math.min(baseplate.h - ball.height, ball.global_y));
+    
                 // Move the camera based on the ball position
                 baseplate.moveLocally(ball);
+    
                 repaint();
             }
         });
         timer.start(); // Start the timer
     }
-    
+
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
-        
+
         AffineTransform oldTransform = g2d.getTransform();
 
         g2d.setClip(0, 0, DrawingCanvas.w, DrawingCanvas.h);
         g2d.translate(-ball.camera.x, -ball.camera.y);
-
 
         // Background
         Rectangle2D.Double r = new Rectangle2D.Double(0, 0, baseplate.w, baseplate.h);
@@ -95,7 +110,7 @@ public class DrawingCanvas extends JComponent {
         g2d.fill(r);
 
         drawLines(g2d, 50);
-         
+
         // Instance of ball but updated
         user.x = ball.global_x;
         user.y = ball.global_y;
@@ -106,20 +121,20 @@ public class DrawingCanvas extends JComponent {
         bot.x = enemy.global_x;
         bot.y = enemy.global_y;
         bot.width = enemy.w;
-        bot.height = enemy.h; 
-        
-        // Draw enteties        -- with ArrayList<Ellipse2D.Double> store all the entities and then store them from the smallest to the greatest
-        //                      -- and then with a foreach draw the
+        bot.height = enemy.h;
+
+        // Draw enteties -- with ArrayList<Ellipse2D.Double> store all the entities and
+        // then store them from the smallest to the greatest
+        // -- and then with a foreach draw the
         g2d.setColor(ball.color); // R G B
         g2d.fill(user);
         g2d.setColor(enemy.color); // R G B
         g2d.fill(bot);
 
-
         g2d.setTransform(oldTransform);
 
-
-        System.out.println("Ball X: "+ball.global_x+" Ball Y: "+ball.global_y+"\n Mouse X: "+mouse.x+" Mosue Y: "+mouse.y);            
+        System.out.println("Ball X: " + ball.global_x + " Ball Y: " + ball.global_y + "\n Mouse X: " + mouse.x
+                + " Mosue Y: " + mouse.y);
     }
 
     // Method to draw lines every x pixels
