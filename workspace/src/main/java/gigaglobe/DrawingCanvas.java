@@ -61,6 +61,7 @@ public class DrawingCanvas extends JComponent {
             }
         });
     }
+
     private Point getRandomDirection() {
         int angle = random.nextInt(360);
         double radians = Math.toRadians(angle);
@@ -68,6 +69,7 @@ public class DrawingCanvas extends JComponent {
         int y = (int) (Math.sin(radians) * ball.speed);
         return new Point(x, y);
     }
+
     // Update function which works as game-clock
     public void update() {
         Timer timer = new Timer(4, new ActionListener() {
@@ -76,44 +78,76 @@ public class DrawingCanvas extends JComponent {
                 // Update mouseBall position, adjusting for camera offset
                 mouseBall.x = mouse.x + ball.camera.x - 10; // Center the ball on the mouse pointer
                 mouseBall.y = mouse.y + ball.camera.y - 10; // Center the ball on the mouse pointer
-               
+
                 // Make the ball follow the mouseBall trajectory
                 double dx = mouseBall.x - ball.global_x;// Distance x
-                if(dx>=0 && (ball.global_x+ball.width>baseplate.w)){
+                if (dx >= 0 && (ball.global_x + ball.width > baseplate.w)) {
                     dx = 0;
-                }else if(dx<0 && ball.global_x<0){
+                } else if (dx < 0 && ball.global_x < 0) {
                     dx = 0;
                 }
                 double dy = mouseBall.y - ball.global_y;// Distance y
-                if(dy>=0 && (ball.global_y+ball.height>=baseplate.h)){
-                    dy = 0;                    
-                }else if(dy<0 && ball.global_y<=0){
+                if (dy >= 0 && (ball.global_y + ball.height >= baseplate.h)) {
+                    dy = 0;
+                } else if (dy < 0 && ball.global_y <= 0) {
                     dy = 0;
                 }
-                    
+
                 double distance = Math.sqrt(dx * dx + dy * dy);// Distance between the ball and the mouseBall
-                if(distance>ball.width/3){                    
-                    ball.global_x += (dx/distance)*ball.speed;// Move the ball at a certian speed decided by the distance
-                    ball.global_y += (dy/distance)*ball.speed;// Move the ball at a certian speed decided by the distance
-                }else{
+                if (distance > ball.width / 3) {
+                    ball.global_x += (dx / distance) * ball.speed;// Move the ball at a certian speed decided by the
+                                                                  // distance
+                    ball.global_y += (dy / distance) * ball.speed;// Move the ball at a certian speed decided by the
+                                                                  // distance
+                } else {
                     Point direction = getRandomDirection();
                     ball.global_x += direction.x;
                     ball.global_y += direction.y;
 
                     // Ensure the ball stays within the boundaries
-                    if (ball.global_x<0) ball.global_x = 0;
-                    if (ball.global_y<0) ball.global_y = 0;
-                    if (ball.global_x+ball.width>baseplate.w) ball.global_x = baseplate.w-ball.width;
-                    if (ball.global_y+ball.height>baseplate.h) ball.global_y = baseplate.h-ball.height;
-                
+                    if (ball.global_x < 0)
+                        ball.global_x = 0;
+                    if (ball.global_y < 0)
+                        ball.global_y = 0;
+                    if (ball.global_x + ball.width > baseplate.w)
+                        ball.global_x = baseplate.w - ball.width;
+                    if (ball.global_y + ball.height > baseplate.h)
+                        ball.global_y = baseplate.h - ball.height;
+
+                    if (checkIfEating(ball, enemy)) {
+                        enemy.riposiziona();
+                    }
+
                 }
                 // Move the camera based on the ball position
                 baseplate.moveLocally(ball);
-    
+
                 repaint();
             }
         });
         timer.start(); // Start the timer
+    }
+
+    public boolean checkIfEating(Humanoid ball, Enemy target) {
+        // Calcola il centro della palla
+        double ballCenterX = ball.global_x + (ball.width / 2.0);
+        double ballCenterY = ball.global_y + (ball.height / 2.0);
+
+        // Calcola il centro della palla target
+        double targetCenterX = target.global_x + (target.w / 2.0);
+        double targetCenterY = target.global_y + (target.h / 2.0);
+
+        // Calcola la distanza tra i centri delle due palle
+        double dx = targetCenterX - ballCenterX;
+        double dy = targetCenterY - ballCenterY;
+        double distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Soglia per considerare la palla "mangiata" (ad esempio, il raggio della
+        // palla)
+        double eatingThreshold = ball.width / 2.0;
+
+        // Se la distanza è inferiore alla soglia, la palla sta per mangiare l'altra
+        return distance < eatingThreshold;
     }
 
     @Override
@@ -152,15 +186,14 @@ public class DrawingCanvas extends JComponent {
         g2d.setColor(enemy.color); // R G B
         g2d.fill(bot);
 
-
         // Draw the mouse-following ball
-        //g2d.setColor(Color.RED); // Set the color for the mouse-following ball
-        //g2d.fill(mouseBall);
+        // g2d.setColor(Color.RED); // Set the color for the mouse-following ball
+        // g2d.fill(mouseBall);
 
         g2d.setTransform(oldTransform);
 
-
-        //System.out.println("Ball X: "+ball.global_x+" Ball Y: "+ball.global_y+"\n Mouse X: "+mouse.x+" Mosue Y: "+mouse.y);            
+        // System.out.println("Ball X: "+ball.global_x+" Ball Y: "+ball.global_y+"\n
+        // Mouse X: "+mouse.x+" Mosue Y: "+mouse.y);
     }
 
     // Method to draw lines every x pixels
