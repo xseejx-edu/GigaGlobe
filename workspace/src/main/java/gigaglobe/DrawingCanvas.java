@@ -55,7 +55,7 @@ public class DrawingCanvas extends JComponent {
 
     // Update function which works as game-clock
     public void update(){
-        Timer timer = new Timer(16, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60) --> 1000/FPS
+        Timer timer = new Timer(8, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60) --> 1000/FPS
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
                 // Calcola inclinazione
@@ -67,7 +67,7 @@ public class DrawingCanvas extends JComponent {
                     deltaX /= distance;
                     deltaY /= distance;
                 }
-                
+
                 ball.global_x += deltaX * ball.speed;
                 ball.global_y += deltaY * ball.speed;
 
