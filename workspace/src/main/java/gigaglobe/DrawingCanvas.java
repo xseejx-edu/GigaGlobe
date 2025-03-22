@@ -10,18 +10,19 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 
 public class DrawingCanvas extends JComponent {
     private int score = 0;
-    private static final int ENEMIES = 10;
+    private static final int ENEMIES = 50;
     public static int w; // Windows width
     public static int h; // Windows height
     public Point mouse = new Point(0, 0);
     Humanoid ball;
     Enemy enemy;
-    Baseplate baseplate = new Baseplate(1000, 1000);
+    Baseplate baseplate = new Baseplate(10000, 10000);
     Ellipse2D.Double user;
     Ellipse2D.Double bot;
     Ellipse2D.Double mouseBall;
@@ -39,6 +40,7 @@ public class DrawingCanvas extends JComponent {
                                                                              // be drawed
         // Append entities to the logical baseplate
         baseplate.createUser(user);
+        //baseplate.createEntity(user);
 
 
         // Non-Static Enemies (Enemies that move)
@@ -49,7 +51,8 @@ public class DrawingCanvas extends JComponent {
                                 temp_w, temp_w,
                                 new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)), // RGB
                                 EnemyType.PREDATOR,
-                                i   // id
+                                i,   // id
+                                baseplate
                                 );
             baseplate.createEntity(e);
         }
@@ -179,42 +182,125 @@ public class DrawingCanvas extends JComponent {
         timer.start(); // Start the timer
     }
 
-    public void moveEnemy(){
-        Timer timer = new Timer(8, new ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                for (Enemy i : baseplate.entities) {
-                    try{
-                        // The enemy will make a path which are a vector of points
-                        // The points will be modify to the selected target that the enemy wants to reach
-                        // If another smaller enemy is near it it will change the target and path                    
-                        Point direction = getRandomDirection();
-                        // Move the enemy only when its width is greater than 25 else he will become a unmoving target
-                        i.move(direction.x, direction.y);
-                        i.w -= 0.001;
-                        i.h -= 0.001;
-                    }catch (Exception ex){
-                        System.out.println("Error: " + ex.getMessage());
+    public void moveEnemy() {
+    Timer timer = new Timer(8, new ActionListener() {
+        @Override
+        public void actionPerformed(java.awt.event.ActionEvent e) {
+            // Create a list to track enemies that need to be removed
+            ArrayList<Enemy> enemiesToRemove = new ArrayList<>();
+            
+            // First loop - handle movement and player collision
+            for (Enemy enemy : baseplate.entities) {
+                try {
+                    // Skip enemies that are too small
+                    if (enemy.w <= 25) {
+                        enemy.type = EnemyType.NEUTRAL;
+                        continue;
+                    }
+                    
+                    // Shrink the enemy over time
+                    enemy.w -= 0.001;
+                    enemy.h -= 0.001;
+                    
+                    // Update target if needed
+                    if (enemy.target == null) {
+                        enemy.buildRoute(baseplate);
+                    }
+                    
+                    // Move toward the target
+                    enemy.moveToTarget();
+                    
+                    // Check if enemy eats the player
+                    if (checkCollision(ball, enemy) && enemy.w > ball.width) {
+                        // Enemy eats player
+                        enemy.w += ball.width / 5;
+                        enemy.h += ball.width / 5;
+                        shrinkBall(); // Game over
+                    }
+                } catch (Exception ex) {
+                    System.out.println("Error in movement: " + ex.getMessage());
+                }
+            }
+            
+            // Second loop - handle enemy-enemy collision
+            // We do this in a separate phase to avoid concurrent modification
+            for (int i = 0; i < baseplate.entities.size(); i++) {
+                Enemy enemy = baseplate.entities.get(i);
+                
+                // Skip if this enemy is already marked for removal
+                if (enemiesToRemove.contains(enemy)) {
+                    continue;
+                }
+                
+                for (int j = 0; j < baseplate.entities.size(); j++) {
+                    // Skip comparing with itself
+                    if (i == j) {
+                        continue;
+                    }
+                    
+                    Enemy otherEnemy = baseplate.entities.get(j);
+                    
+                    // Skip if the other enemy is already marked for removal
+                    if (enemiesToRemove.contains(otherEnemy)) {
+                        continue;
+                    }
+                    
+                    try {
+                        if (checkCollision(enemy, otherEnemy)) {
+                            // Bigger enemy eats smaller enemy
+                            if (enemy.w > otherEnemy.w) {
+                                enemy.w += otherEnemy.w / 5;
+                                enemy.h += otherEnemy.w / 5;
+                                enemiesToRemove.add(otherEnemy);
+                            }
+                        }
+                    } catch (Exception ex) {
+                        System.out.println("Error in collision: " + ex.getMessage());
                     }
                 }
-                repaint();
             }
-        });
-        timer.start();
-    }
-
-    public boolean checkCollision(Humanoid ball, Enemy target) {
-        // Calculate center of ball
-        double bX = ball.global_x + (ball.width / 2.0);
-        double bY = ball.global_y + (ball.height / 2.0);
-
-        // Calculate center of target
-        double tX = target.global_x + (target.w / 2.0);
-        double tY = target.global_y + (target.h / 2.0);
-        if (Math.abs(tX - bX) <= ball.width / 2.0 && Math.abs(tY - bY) <= ball.height / 2.0) {
-            return true;
+            
+            // Finally, remove all enemies marked for removal
+            baseplate.entities.removeAll(enemiesToRemove);
+            
+            repaint();
         }
-        return false;
+    });
+    timer.start();
+}
+
+    public boolean checkCollision(Enemy ball, Enemy target) {
+        // Calculate centers of both circles
+        double ball1CenterX = ball.global_x + (ball.w / 2.0);
+        double ball1CenterY = ball.global_y + (ball.w / 2.0);
+        double ball2CenterX = target.global_x + (target.w / 2.0);
+        double ball2CenterY = target.global_y + (target.h / 2.0);
+        
+        // Calculate distance between centers
+        double distance = Math.sqrt(
+            Math.pow(ball2CenterX - ball1CenterX, 2) + 
+            Math.pow(ball2CenterY - ball1CenterY, 2)
+        );
+        
+        // If distance is less than the sum of radii, collision detected
+        return distance < (ball.w / 2.0 + target.w / 2.0);
+    }
+    
+    public boolean checkCollision(Humanoid ball, Enemy target) {
+        // Calculate centers of both circles
+        double ball1CenterX = ball.global_x + (ball.width / 2.0);
+        double ball1CenterY = ball.global_y + (ball.height / 2.0);
+        double ball2CenterX = target.global_x + (target.w / 2.0);
+        double ball2CenterY = target.global_y + (target.h / 2.0);
+        
+        // Calculate distance between centers
+        double distance = Math.sqrt(
+            Math.pow(ball2CenterX - ball1CenterX, 2) + 
+            Math.pow(ball2CenterY - ball1CenterY, 2)
+        );
+        
+        // If distance is less than the sum of radii, collision detected
+        return distance < (ball.width / 2.0 + target.w / 2.0);
     }
 
     @Override

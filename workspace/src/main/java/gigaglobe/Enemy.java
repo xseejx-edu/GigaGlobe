@@ -22,12 +22,14 @@ public class Enemy {
     public double speed;
     public Color color;
 
-    private EnemyType type;
+    public EnemyType type;
 
     public Enemy target;
     public Point2D.Double[] path;
+
+    private Baseplate baseplate;
     
-    public Enemy(double x, double y, double w, double h, Color c, EnemyType t, int id){
+    public Enemy(double x, double y, double w, double h, Color c, EnemyType t, int id, Baseplate b){
         this.global_x = x;
         this.global_y = y;
         this.x = x;
@@ -40,6 +42,9 @@ public class Enemy {
         type = t;
         color = new Color(c.getRGB());
         this.id = id;
+        this.baseplate = b;
+
+
     }
 
     public void setRandomposition(int wi, int he){
@@ -54,130 +59,215 @@ public class Enemy {
         global_x += x;
         global_y += y;
     }
-    
-    public void buildRoute(Baseplate baseplate){
-        // The path is a line from the enemy to the target with a gap for each point of 10 pixels
-        // The path is built so that the enemy avoids meeting other enemies that are bigger than him
 
-
-        // First we check if there is already a path
-        if(path != null){
-            // Path already exists
+    public void buildRoute(Baseplate baseplate) {
+        // If we're neutral, we don't move
+        if (type == EnemyType.NEUTRAL) {
+            return;
         }
-
-        // Build the path
-        // Fist we check the sourroundings of the enemy -
-        // We check first distance to each enemy in the map
-        //ArrayList<Double> enemies_distance = new ArrayList<Double>();
-        ArrayList<Target> targets = new ArrayList<Target>();
+        
+        // Find potential targets
+        ArrayList<Enemy> potentialTargets = new ArrayList<>();
         for (Enemy enemy : baseplate.entities) {
-            if(enemy == this)
+            // Skip ourselves
+            if (enemy.id == this.id) {
                 continue;
-            double distance = Math.sqrt(Math.pow(global_x - enemy.global_x, 2) + Math.pow(global_y - enemy.global_y, 2));
-            targets.add(new Target(distance, new Point2D.Double(enemy.global_x, enemy.global_y), enemy.w, enemy.id));
-        }
-
-        // Now we got the distances to each enemy
-        // We give priority to our EnemyType - if we are a pray we will care about the distance only
-        // If we are a predator we will not care about the distance but about the width of the enemy
-        // If we are neutral we will not move at all
-        if(type == EnemyType.PREY){
-            // We sort the enemies by distance from the closest to the farthest
-            targets.sort(Comparator.comparingDouble(Target::getDistance).reversed());
-        }else if(type == EnemyType.PREDATOR){
-            // We sort the enemies by width from the smallest to the biggest
-            targets.sort(Comparator.comparingDouble(Target::getWidth));
-        }else{
-            return;// We are neutral
-        }
-        ArrayList<Path> paths = new ArrayList<Path>();
-        // Now we have an Array containing the enemies sorted by distance or width
-        // We will build a path that directs the enemy to all the targets using a straight line
-        // Each Line will have a counter which will tell how many enemies are in the way (they can be near)
-        // We will then choose the Line with less count and we will analyze the surroundings of that line
-        for (Target target : targets) {
-            int dangerLevel = 0;
-            Point2D.Double[] dangerZone = new Point2D.Double[0];
-            // We first check if target is smaller than us and then we proceed
-            if(target.width >= w)
-                continue;
-            // We already have the x and y
-            // So we need to take a favourite path by checkign the sourroundings
-            // To do that we will check x and y for each target
-            // If target is close to another target with a gap of x and y of 30 pixels we will count that as +1 near enemy
-            // and if that enemy is bigger than us we will count that as danger zone so +2
-            for (Target nearTarget : targets) {
-                if(nearTarget == target)
-                    continue;
-                if(Math.abs(target.position.x - nearTarget.position.x) < 30 && Math.abs(target.position.y - nearTarget.position.y) < 30){
-                    // We get the distance from target to nearTarget and if it is negative is before our taret so in the path
-                    // if it is positive is after our target so we will not count it as a danger
-                    if(nearTarget.width < w)
-                        continue;
-
-                    dangerLevel++; // By default is 1
-                    if(target.distance - nearTarget.distance > 0 || target.distance - nearTarget.distance < -50) // is before our target +1
-                       dangerLevel++;    
-                    else
-                        continue; // is after our target so we will not count it as a danger and also it is far from standard range
-                    
-                    // Otherwise we will add the danger zone to the path
-                    Point2D.Double[] newDangerZone = new Point2D.Double[dangerZone.length+1];
-                    for (int i = 0; i < dangerZone.length; i++) {
-                        newDangerZone[i] = dangerZone[i];
-                    }
-                    newDangerZone[dangerZone.length] = nearTarget.position;
-                    dangerZone = newDangerZone;
-                }
             }
-            // We have the danger level for this target
-            // We will add this to an array of path which will contain:
-            // danger, distance, x and y (Point), id
-            paths.add(new Path(target.distance, target.id, target.position, dangerLevel, target.width, dangerZone));
-        }
-
-        // Now we have paths but we have to decide which one to take
-        // The array path is sorted by distance only and that indicates if we are a prey the sort will be : 1, 2, 3 ..
-        // If we are a predator the sort will be : 3, 2, 1 ..
-
-        // So for now by default we will take the route with less danger level
-        paths.sort(Comparator.comparingInt(Path::getDangerLevel));
-        // We discard all the paths with danger level higher than the first one and keep the ones witht he same danger level
-        int dangerLevel = paths.get(0).getDangerLevel();
-        ArrayList<Path> paths2 = new ArrayList<Path>();
-        for (Path path : paths) {
-            if(path.getDangerLevel() == dangerLevel){
-                paths2.add(path);
+            
+            // PREDATORS target smaller enemies, PREY avoid larger enemies
+            if ((type == EnemyType.PREDATOR && enemy.w < this.w) || 
+                (type == EnemyType.PREY && enemy.w > this.w)) {
+                potentialTargets.add(enemy);
             }
         }
-        // Now we have the paths with the same danger level and based on what we are we will choose the one:
-        // If we are a prey we will choose the one with the shortest distance
-        // If we are a predator we will choose the one with bigger width
-        if(type == EnemyType.PREY){
-            paths2.sort(Comparator.comparingDouble(Path::getDistance)); // From short to long
-        }else if(type == EnemyType.PREDATOR){
-            paths2.sort(Comparator.comparingDouble(Path::getWidth).reversed());// From Big to small
+        
+        // If no suitable targets, move randomly
+        if (potentialTargets.isEmpty()) {
+            moveRandomly();
+            return;
         }
-
-        // Now that we have our paths we need to build it
-        // To build the path we have to simulate that we are going on that path
-        // So where the danger level is we will then make turns to avoid the danger
-        // The turns could be multiple so we will have to check the surroundings again
-        // We will always take the safest path
-        // Then once we have our paths with x and y taht points at a turn and distance is the distance from the previous turn
-        // We have built the path
-
-        // route.createRoute(path2, this.x, this.y, baseplate, this.id);
-        // Building Path
-        ArrayList<Route> routes = new ArrayList<Route>();// Thsi will contain the routes
-        for (Path path : paths2) {
-            // Create a route for each path2
+        
+        // Choose target based on type
+        Enemy chosenTarget = null;
+        
+        if (type == EnemyType.PREDATOR) {
+            // Predators prioritize smaller enemies
+            potentialTargets.sort(Comparator.comparingDouble(e -> e.w));
+            chosenTarget = potentialTargets.get(0); // Smallest prey
+        } else if (type == EnemyType.PREY) {
+            // Prey prioritize distance (farthest from predators)
+            potentialTargets.sort(Comparator.comparingDouble(e -> 
+                -calculateDistance(this.global_x, this.global_y, e.global_x, e.global_y)));
+            chosenTarget = potentialTargets.get(0); // Farthest predator
         }
-
+        
+        // Set the target
+        this.target = chosenTarget;
     }
-
-    public void move2NextPoint(){
-        // Move the enemy to the next point in the path
+    
+    public void moveToTarget() {
+        // If no target or we're neutral, don't move
+        if (target == null || type == EnemyType.NEUTRAL) {
+            return;
+        }
+        
+        // Calculate direction to target
+        double targetX = target.global_x;
+        double targetY = target.global_y;
+        
+        // If we're prey, move AWAY from predators
+        if (type == EnemyType.PREY) {
+            // Reverse the direction
+            double dx = this.global_x - targetX;
+            double dy = this.global_y - targetY;
+            
+            // Calculate a point further away in the same direction
+            targetX = this.global_x + dx;
+            targetY = this.global_y + dy;
+        }
+        
+        // Check for obstacles in the path
+        boolean obstacleFound = checkForObstacles(targetX, targetY);
+        
+        if (obstacleFound && type == EnemyType.PREDATOR) {
+            // Find a path around obstacles
+            Point2D.Double detourPoint = findDetourPoint(targetX, targetY);
+            targetX = detourPoint.x;
+            targetY = detourPoint.y;
+        }
+        
+        // Calculate movement vector
+        double dx = targetX - this.global_x;
+        double dy = targetY - this.global_y;
+        double distance = Math.sqrt(dx*dx + dy*dy);
+        
+        // Normalize and apply speed
+        if (distance > 0) {
+            dx = (dx / distance) * speed;
+            dy = (dy / distance) * speed;
+            
+            // Move the enemy
+            this.global_x += dx;
+            this.global_y += dy;
+            this.x = this.global_x;
+            this.y = this.global_y;
+        }
+        
+        // Check if we reached or need to switch targets
+        if ((type == EnemyType.PREDATOR && distance < this.w) ||
+            (type == EnemyType.PREY && distance > 300)) {
+            // Find a new target
+            target = null;
+        }
+    }
+    
+    private boolean checkForObstacles(double targetX, double targetY) {
+        // Simple obstacle detection
+        for (Enemy enemy : baseplate.entities) {
+            // Skip ourselves and our target
+            if (enemy.id == this.id || (target != null && enemy.id == target.id)) {
+                continue;
+            }
+            
+            // Skip smaller enemies for predators
+            if (type == EnemyType.PREDATOR && enemy.w < this.w) {
+                continue;
+            }
+            
+            // Check if enemy is between us and the target
+            if (isEnemyInPath(this.global_x, this.global_y, targetX, targetY, 
+                              enemy.global_x, enemy.global_y, enemy.w)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean isEnemyInPath(double startX, double startY, double endX, double endY,
+                                  double enemyX, double enemyY, double enemyWidth) {
+        // Vector from start to end
+        double dx = endX - startX;
+        double dy = endY - startY;
+        double length = Math.sqrt(dx*dx + dy*dy);
+        
+        // Normalize
+        double unitX = dx / length;
+        double unitY = dy / length;
+        
+        // Vector from start to enemy
+        double ex = enemyX - startX;
+        double ey = enemyY - startY;
+        
+        // Project enemy onto path vector
+        double projection = ex * unitX + ey * unitY;
+        
+        // Enemy is behind us or past the end point
+        if (projection < 0 || projection > length) {
+            return false;
+        }
+        
+        // Find closest point on line to enemy
+        double closestX = startX + unitX * projection;
+        double closestY = startY + unitY * projection;
+        
+        // Check if enemy is close enough to path to be an obstacle
+        double distanceToPath = Math.sqrt(
+            Math.pow(closestX - enemyX, 2) + 
+            Math.pow(closestY - enemyY, 2)
+        );
+        
+        return distanceToPath < (enemyWidth + this.w) / 2;
+    }
+    
+    private Point2D.Double findDetourPoint(double targetX, double targetY) {
+        // Simple detour calculation - go perpendicular to the target direction
+        double dx = targetX - this.global_x;
+        double dy = targetY - this.global_y;
+        double length = Math.sqrt(dx*dx + dy*dy);
+        
+        // Normalize
+        dx = dx / length;
+        dy = dy / length;
+        
+        // Perpendicular vector
+        double perpX = -dy;
+        double perpY = dx;
+        
+        // Choose a random direction (left or right of the obstacle)
+        if (Math.random() > 0.5) {
+            perpX = -perpX;
+            perpY = -perpY;
+        }
+        
+        // Create a detour point
+        double detourDistance = this.w * 2;
+        return new Point2D.Double(
+            this.global_x + perpX * detourDistance + dx * detourDistance,
+            this.global_y + perpY * detourDistance + dy * detourDistance
+        );
+    }
+    
+    private void moveRandomly() {
+        // Move in a random direction
+        double angle = Math.random() * 2 * Math.PI;
+        double dx = Math.cos(angle) * speed;
+        double dy = Math.sin(angle) * speed;
+        
+        // Update position
+        this.global_x += dx;
+        this.global_y += dy;
+        this.x = this.global_x;
+        this.y = this.global_y;
+        
+        // Keep within boundaries
+        if (this.global_x < 0) this.global_x = 0;
+        if (this.global_y < 0) this.global_y = 0;
+        if (this.global_x > baseplate.w - this.w) this.global_x = baseplate.w - this.w;
+        if (this.global_y > baseplate.h - this.h) this.global_y = baseplate.h - this.h;
+    }
+    
+    private double calculateDistance(double x1, double y1, double x2, double y2) {
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     }
 
 }
