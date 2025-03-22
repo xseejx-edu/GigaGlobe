@@ -46,6 +46,7 @@ public class DrawingCanvas extends JComponent {
         // Start events
         mouseEvent();
         update();
+        moveEnemy();
     }
 
     // Get mouse X and Y
@@ -71,6 +72,25 @@ public class DrawingCanvas extends JComponent {
         return new Point(x, y);
     }
 
+    // Shrinkign Ball Animation
+    private void shrinkBall() {
+        Timer shrinkTimer = new Timer(16, new ActionListener() { // ~60 FPS (1000ms / 16 ≈ 60)
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                if (ball.width > 0 && ball.height > 0) {
+                    ball.width -= 0.1;
+                    ball.height -= 0.1;
+                    if (ball.width < 0) ball.width = 0;
+                    if (ball.height < 0) ball.height = 0;
+                    repaint();
+                } else {
+                    ((Timer) e.getSource()).stop();
+                }
+            }
+        });
+        shrinkTimer.start();
+    }
+    
     // Update function which works as game-clock
     public void update() {
         Timer timer = new Timer(8, new ActionListener() {
@@ -79,7 +99,12 @@ public class DrawingCanvas extends JComponent {
                 // Update mouseBall position, adjusting for camera offset
                 mouseBall.x = (mouse.x / zoomFactor) + ball.camera.x - 10; // Center the ball on the mouse pointer
                 mouseBall.y = (mouse.y / zoomFactor) + ball.camera.y - 10; // Center the ball on the mouse pointer
-
+                ball.width -= 0.001;
+                ball.height -= 0.001;
+                if (ball.width <= 25) {                    
+                    shrinkBall();
+                    return; // Game Over
+                }
                 // Make the ball follow the mouseBall trajectory
                 double dx = mouseBall.x - (ball.global_x + ball.width /2);// Distance x
                 if (dx >= 0 && (ball.global_x + ball.width > baseplate.w)) {
@@ -93,7 +118,6 @@ public class DrawingCanvas extends JComponent {
                 } else if (dy < 0 && ball.global_y <= 0) {
                     dy = 0;
                 }
-
                 double distance = Math.sqrt(dx * dx + dy * dy);// Distance between the ball and the mouseBall
                 if (distance > ball.width / 2) {
                     ball.global_x += (dx / distance) * ball.speed;// Move the ball at a certian speed decided by the
@@ -114,7 +138,7 @@ public class DrawingCanvas extends JComponent {
                     if (ball.global_y + ball.height > baseplate.h)
                         ball.global_y = baseplate.h - ball.height;   
                 }
-                if (checkCollision(ball, enemy)) {
+                if (checkCollision(ball, enemy) && ball.width > enemy.w) {
                     enemy.setRandomposition(baseplate.w, baseplate.h);
                     ball.getBigger();
                     score++;
@@ -125,6 +149,26 @@ public class DrawingCanvas extends JComponent {
             }
         });
         timer.start(); // Start the timer
+    }
+
+    public void moveEnemy(){
+        Timer timer = new Timer(8, new ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                for (Enemy i : baseplate.entities) {
+                    // The enemy will make a path which are a vector of points
+                    // The points will be modify to the selected target that the enemy wants to reach
+                    // If another smaller enemy is near it it will change the target and path                    
+                    Point direction = getRandomDirection();
+                    // Move the enemy only when its width is greater than 25 else he will become a unmoving target
+                    i.move(direction.x, direction.y);
+                    i.w -= 0.001;
+                    i.h -= 0.001;
+                }
+                repaint();
+            }
+        });
+        timer.start();
     }
 
     public boolean checkCollision(Humanoid ball, Enemy target) {
@@ -149,10 +193,8 @@ public class DrawingCanvas extends JComponent {
 
         g2d.setClip(0, 0, DrawingCanvas.w, DrawingCanvas.h);
         // Scale -- greater = zoomed in and smaller = zoomed out
-        zoomFactor = Math.max(0.3, 1.0 - (ball.width / baseplate.w ));
-        System.out.println("Ball width: " + ball.width);
-        System.out.println("w: " + w);
-        System.out.println("Zoom factor: " + zoomFactor);
+        zoomFactor = Math.max(0.3, 1.0 - (ball.width / baseplate.w )); // Adjust the zoom based on the ball size and baseplate
+        ball.speed = Math.max(1, 3 * zoomFactor); // Adjust the speed based on the zoom factor
         g2d.scale(zoomFactor, zoomFactor);  // Applay the scale
 
         // Adjust the camera for the scale
