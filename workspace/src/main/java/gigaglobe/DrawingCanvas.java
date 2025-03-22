@@ -81,13 +81,13 @@ public class DrawingCanvas extends JComponent {
                 mouseBall.y = mouse.y + ball.camera.y - 10; // Center the ball on the mouse pointer
 
                 // Make the ball follow the mouseBall trajectory
-                double dx = mouseBall.x - ball.global_x;// Distance x
+                double dx = mouseBall.x - (ball.global_x + ball.width /2);// Distance x
                 if (dx >= 0 && (ball.global_x + ball.width > baseplate.w)) {
                     dx = 0;
                 } else if (dx < 0 && ball.global_x < 0) {
                     dx = 0;
                 }
-                double dy = mouseBall.y - ball.global_y;// Distance y
+                double dy = mouseBall.y - (ball.global_y + ball.height / 2);// Distance y
                 if (dy >= 0 && (ball.global_y + ball.height >= baseplate.h)) {
                     dy = 0;
                 } else if (dy < 0 && ball.global_y <= 0) {
@@ -95,7 +95,7 @@ public class DrawingCanvas extends JComponent {
                 }
 
                 double distance = Math.sqrt(dx * dx + dy * dy);// Distance between the ball and the mouseBall
-                if (distance > ball.width / 3) {
+                if (distance > ball.width / 2) {
                     ball.global_x += (dx / distance) * ball.speed;// Move the ball at a certian speed decided by the
                                                                   // distance
                     ball.global_y += (dy / distance) * ball.speed;// Move the ball at a certian speed decided by the
@@ -104,7 +104,6 @@ public class DrawingCanvas extends JComponent {
                     Point direction = getRandomDirection();
                     ball.global_x += direction.x;
                     ball.global_y += direction.y;
-
                     // Ensure the ball stays within the boundaries
                     if (ball.global_x < 0)
                         ball.global_x = 0;
@@ -113,36 +112,34 @@ public class DrawingCanvas extends JComponent {
                     if (ball.global_x + ball.width > baseplate.w)
                         ball.global_x = baseplate.w - ball.width;
                     if (ball.global_y + ball.height > baseplate.h)
-                        ball.global_y = baseplate.h - ball.height;
-
-                    if (checkIfEating(ball, enemy)) {
-                        enemy.riposiziona();
-                        score++;
-                    }
-
+                        ball.global_y = baseplate.h - ball.height;   
+                }
+                if (checkCollision(ball, enemy)) {
+                    enemy.setRandomposition(baseplate.w, baseplate.h);
+                    ball.getBigger();
+                    score++;
                 }
                 // Move the camera based on the ball position
-                baseplate.moveLocally(ball);
-
+                baseplate.moveLocally(ball, score);
+                System.out.println("Distance: "+distance);
                 repaint();
             }
         });
         timer.start(); // Start the timer
     }
 
-    public boolean checkIfEating(Humanoid ball, Enemy target) {
-        // Calcola il centro della palla
+    public boolean checkCollision(Humanoid ball, Enemy target) {
+        // Calculate center of ball
         double bX = ball.global_x + (ball.width / 2.0);
         double bY = ball.global_y + (ball.height / 2.0);
 
-        // Calcola il centro della palla target
+        // Calculate center of target
         double tX = target.global_x + (target.w / 2.0);
         double tY = target.global_y + (target.h / 2.0);
-
-        if (Math.abs(tX - bX) >= ball.width / 2.0 && Math.abs(tY - bY) >= ball.height / 2.0) {
-            return false;
+        if (Math.abs(tX - bX) <= ball.width / 2.0 && Math.abs(tY - bY) <= ball.height / 2.0) {
+            return true;
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -182,8 +179,8 @@ public class DrawingCanvas extends JComponent {
         g2d.fill(bot);
 
         // Draw the mouse-following ball
-        // g2d.setColor(Color.RED); // Set the color for the mouse-following ball
-        // g2d.fill(mouseBall);
+         g2d.setColor(Color.RED); // Set the color for the mouse-following ball
+         g2d.fill(mouseBall);
 
         g2d.setTransform(oldTransform); // Ripristina la trasformazione per disegnare il punteggio
         g2d.setColor(Color.BLACK);

@@ -25,4 +25,9 @@ public class Humanoid {
         this.height = h;
         color = new Color(c.getRGB());
     }
+
+    public void getBigger(){
+        this.width += 10;
+        this.height += 10;
+    }
 }

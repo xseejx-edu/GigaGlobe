@@ -18,15 +18,15 @@ public class Baseplate {
     }
                             
     // Moves the camera in the map
-    public void moveLocally(Humanoid ball){
+    public void moveLocally(Humanoid ball, int score){
         // Get the local map which is the window size
         int w = DrawingCanvas.w;// this is the screen width
         int h = DrawingCanvas.h;// this is the screen height
-        double globalx_camera = ball.global_x-((w/2)-(ball.width/2));
-        double globaly_camera = ball.global_y-(h/2)-(ball.width/2);
+        //double globalx_camera = ball.global_x-((w/2)-(ball.width/2));
+        //double globaly_camera = ball.global_y-(h/2)-(ball.width/2);
         
-        ball.camera.x = globalx_camera;
-        ball.camera.y = globaly_camera;
+        ball.camera.x = ball.global_x + ball.width / 2 - DrawingCanvas.w / 2;
+        ball.camera.y = ball.global_y + ball.height / 2 - DrawingCanvas.h / 2;
         ball.camera.width  =w;
         ball.camera.height  =h;
     }
