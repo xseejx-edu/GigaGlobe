@@ -1,6 +1,8 @@
 package gigaglobe;
 
 import javax.swing.*;
+
+
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -8,10 +10,12 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import java.util.Iterator;
 import java.util.Random;
 
 public class DrawingCanvas extends JComponent {
     private int score = 0;
+    private static final int ENEMIES = 10;
     public static int w; // Windows width
     public static int h; // Windows height
     public Point mouse = new Point(0, 0);
@@ -33,14 +37,27 @@ public class DrawingCanvas extends JComponent {
                 new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
         user = new Ellipse2D.Double(ball.x, ball.y, ball.width, ball.height);// Instance of ball but with the purpose to
                                                                              // be drawed
-
-        // Enemies
-        enemy = new Enemy(700, 500, 50, 50, new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
-
         // Append entities to the logical baseplate
         baseplate.createUser(user);
-        baseplate.createEntity(enemy);
 
+
+        // Non-Static Enemies (Enemies that move)
+        for (int i = 0; i < ENEMIES; i++) {
+            double temp_w = random.nextDouble(200) + 10;// Random width and height
+            Enemy e = new Enemy(random.nextDouble(baseplate.w - temp_w)+temp_w/2, // x
+                                random.nextDouble(baseplate.h - temp_w), // y
+                                temp_w, temp_w,
+                                new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)), // RGB
+                                EnemyType.PREDATOR,
+                                i   // id
+                                );
+            baseplate.createEntity(e);
+        }
+
+        // Static Enemies (Enemies that don't move)
+
+
+        // Mouse-following ball
         mouseBall = new Ellipse2D.Double(mouse.x, mouse.y, 20, 20);
 
         // Start events
@@ -101,7 +118,7 @@ public class DrawingCanvas extends JComponent {
                 mouseBall.y = (mouse.y / zoomFactor) + ball.camera.y - 10; // Center the ball on the mouse pointer
                 ball.width -= 0.001;
                 ball.height -= 0.001;
-                if (ball.width <= 25) {                    
+                if (ball.width < 25) {                    
                     shrinkBall();
                     return; // Game Over
                 }
@@ -138,11 +155,22 @@ public class DrawingCanvas extends JComponent {
                     if (ball.global_y + ball.height > baseplate.h)
                         ball.global_y = baseplate.h - ball.height;   
                 }
-                if (checkCollision(ball, enemy) && ball.width > enemy.w) {
-                    enemy.setRandomposition(baseplate.w, baseplate.h);
-                    ball.getBigger();
-                    score++;
+                
+                // Check for collision with enemies
+                // Using Iterator to avoid ConcurrentModificationException
+                for (Iterator<Enemy> iterator = baseplate.entities.iterator(); iterator.hasNext();) {
+                    Enemy i = iterator.next();
+                    try {
+                        if (checkCollision(ball, i) && ball.width > i.w) {
+                            ball.getBigger(i.w / 5);
+                            iterator.remove(); // Use iterator to remove the element
+                            score++;
+                        }
+                    } catch (Exception ex) {
+                        System.out.println("Error: " + ex.getMessage());
+                    }
                 }
+
                 // Move the camera based on the ball position
                 baseplate.moveLocally(ball, score);
                 repaint();
@@ -156,14 +184,18 @@ public class DrawingCanvas extends JComponent {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
                 for (Enemy i : baseplate.entities) {
-                    // The enemy will make a path which are a vector of points
-                    // The points will be modify to the selected target that the enemy wants to reach
-                    // If another smaller enemy is near it it will change the target and path                    
-                    Point direction = getRandomDirection();
-                    // Move the enemy only when its width is greater than 25 else he will become a unmoving target
-                    i.move(direction.x, direction.y);
-                    i.w -= 0.001;
-                    i.h -= 0.001;
+                    try{
+                        // The enemy will make a path which are a vector of points
+                        // The points will be modify to the selected target that the enemy wants to reach
+                        // If another smaller enemy is near it it will change the target and path                    
+                        Point direction = getRandomDirection();
+                        // Move the enemy only when its width is greater than 25 else he will become a unmoving target
+                        i.move(direction.x, direction.y);
+                        i.w -= 0.001;
+                        i.h -= 0.001;
+                    }catch (Exception ex){
+                        System.out.println("Error: " + ex.getMessage());
+                    }
                 }
                 repaint();
             }
@@ -229,8 +261,12 @@ public class DrawingCanvas extends JComponent {
         baseplate.entities.sort((a, b) -> {return (int)(a.w) - (int)(b.w);});// will sort the entities from the smallest to the greatest
         
         for (Enemy i : baseplate.entities) {
-            g2d.setColor(i.color);
-            g2d.fill(new Ellipse2D.Double(i.global_x, i.global_y, i.w, i.h));
+            try {
+                g2d.setColor(i.color);
+                g2d.fill(new Ellipse2D.Double(i.global_x, i.global_y, i.w, i.h));
+            }catch (Exception e){
+                System.out.println("Error: " + e.getMessage());
+            }            
         }
         // Draw the mouse-following ball
         g2d.setColor(Color.RED); // Set the color for the mouse-following ball
