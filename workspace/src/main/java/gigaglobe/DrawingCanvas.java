@@ -21,6 +21,7 @@ public class DrawingCanvas extends JComponent {
     Ellipse2D.Double user;
     Ellipse2D.Double bot;
     Ellipse2D.Double mouseBall;
+    double zoomFactor = 1;
     Random random = new Random();
 
     public DrawingCanvas(int wi, int he) {
@@ -35,12 +36,10 @@ public class DrawingCanvas extends JComponent {
 
         // Enemies
         enemy = new Enemy(700, 500, 50, 50, new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
-        bot = new Ellipse2D.Double(enemy.global_x, enemy.global_y, enemy.w, enemy.h);// Instance of enemy but with the
-                                                                                     // purpose to be drawed
 
         // Append entities to the logical baseplate
         baseplate.createUser(user);
-        baseplate.createEntity(bot);
+        baseplate.createEntity(enemy);
 
         mouseBall = new Ellipse2D.Double(mouse.x, mouse.y, 20, 20);
 
@@ -57,8 +56,9 @@ public class DrawingCanvas extends JComponent {
                 mouse.x = e.getX();
                 mouse.y = e.getY();
                 // Update mouseBall position, adjusting for camera offset
-                mouseBall.x = mouse.x + ball.camera.x - 10; // Center the ball on the mouse pointer
-                mouseBall.y = mouse.y + ball.camera.y - 10; // Center the ball on the mouse pointer
+                mouseBall.x = (mouse.x / zoomFactor) + ball.camera.x - 10; // Center the ball on the mouse pointer
+                mouseBall.y = (mouse.y / zoomFactor) + ball.camera.y - 10; // Center the ball on the mouse pointer
+
             }
         });
     }
@@ -77,8 +77,8 @@ public class DrawingCanvas extends JComponent {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
                 // Update mouseBall position, adjusting for camera offset
-                mouseBall.x = mouse.x + ball.camera.x - 10; // Center the ball on the mouse pointer
-                mouseBall.y = mouse.y + ball.camera.y - 10; // Center the ball on the mouse pointer
+                mouseBall.x = (mouse.x / zoomFactor) + ball.camera.x - 10; // Center the ball on the mouse pointer
+                mouseBall.y = (mouse.y / zoomFactor) + ball.camera.y - 10; // Center the ball on the mouse pointer
 
                 // Make the ball follow the mouseBall trajectory
                 double dx = mouseBall.x - (ball.global_x + ball.width /2);// Distance x
@@ -121,7 +121,6 @@ public class DrawingCanvas extends JComponent {
                 }
                 // Move the camera based on the ball position
                 baseplate.moveLocally(ball, score);
-                System.out.println("Distance: "+distance);
                 repaint();
             }
         });
@@ -149,6 +148,19 @@ public class DrawingCanvas extends JComponent {
         AffineTransform oldTransform = g2d.getTransform();
 
         g2d.setClip(0, 0, DrawingCanvas.w, DrawingCanvas.h);
+        // Scale -- greater = zoomed in and smaller = zoomed out
+        zoomFactor = Math.max(0.3, 1.0 - (ball.width / baseplate.w ));
+        System.out.println("Ball width: " + ball.width);
+        System.out.println("w: " + w);
+        System.out.println("Zoom factor: " + zoomFactor);
+        g2d.scale(zoomFactor, zoomFactor);  // Applay the scale
+
+        // Adjust the camera for the scale
+        ball.camera.x = ball.global_x + ball.width / 2 - (DrawingCanvas.w / zoomFactor) / 2;
+        ball.camera.y = ball.global_y + ball.height / 2 - (DrawingCanvas.h / zoomFactor) / 2;
+        ball.camera.width = DrawingCanvas.w / zoomFactor;
+        ball.camera.height = DrawingCanvas.h / zoomFactor;
+
         g2d.translate(-ball.camera.x, -ball.camera.y);
 
         // Background
@@ -164,33 +176,28 @@ public class DrawingCanvas extends JComponent {
         user.width = ball.width;
         user.height = ball.height;
 
-        // Instance of enemy but updated
-        bot.x = enemy.global_x;
-        bot.y = enemy.global_y;
-        bot.width = enemy.w;
-        bot.height = enemy.h;
 
-        // Draw enteties -- with ArrayList<Ellipse2D.Double> store all the entities and
-        // then store them from the smallest to the greatest
-        // -- and then with a foreach draw the
+        // Draw the user
         g2d.setColor(ball.color); // R G B
         g2d.fill(user);
-        g2d.setColor(enemy.color); // R G B
-        g2d.fill(bot);
 
+        // Draw enteties -- with ArrayList<enemy> store all the entities and
+        // then store them from the smallest to the greatest
+        
+        baseplate.entities.sort((a, b) -> {return (int)(a.w) - (int)(b.w);});// will sort the entities from the smallest to the greatest
+        
+        for (Enemy i : baseplate.entities) {
+            g2d.setColor(i.color);
+            g2d.fill(new Ellipse2D.Double(i.global_x, i.global_y, i.w, i.h));
+        }
         // Draw the mouse-following ball
-         g2d.setColor(Color.RED); // Set the color for the mouse-following ball
-         g2d.fill(mouseBall);
-
-        g2d.setTransform(oldTransform); // Ripristina la trasformazione per disegnare il punteggio
-        g2d.setColor(Color.BLACK);
-        g2d.setFont(new Font("Arial", Font.BOLD, 24));
-        g2d.drawString("Score: " + score, 20, 30); // Disegna il punteggio in alto a sinistra
+        g2d.setColor(Color.RED); // Set the color for the mouse-following ball
+        g2d.fill(mouseBall);
 
         g2d.setTransform(oldTransform);
-
-        // System.out.println("Ball X: "+ball.global_x+" Ball Y: "+ball.global_y+"\n
-        // Mouse X: "+mouse.x+" Mosue Y: "+mouse.y);
+        g2d.setColor(Color.BLACK);
+        g2d.setFont(new Font("Arial", Font.BOLD, 24));
+        g2d.drawString("Score: " + score, 20, 30);
     }
 
     // Method to draw lines every x pixels

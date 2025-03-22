@@ -1,6 +1,7 @@
 package gigaglobe;
 
 import java.awt.Color;
+import java.util.Random;
 
 public class Enemy {
     public double global_x;
@@ -22,7 +23,8 @@ public class Enemy {
     }
 
     public void setRandomposition(int wi, int he){
-        global_x = (Math.random() * wi-50);
-        global_y = (Math.random() * he-50);
+        Random random = new Random();
+        global_x = random.nextInt(wi-100)+50;
+        global_y = random.nextInt(he-100)+50;
     }
 }
